@@ -24,6 +24,7 @@ References:
 var fs = require('fs');
 var commander = require('commander');
 var cheerio = require('cheerio');
+
 var HTMLFILE_DEFAULT = "index.html";
 var CHECKSFILE_DEFAULT = "checks.json";
 
@@ -40,12 +41,17 @@ var cheerioHtmlFile = function(htmlfile) {
     return cheerio.load(fs.readFileSync(htmlfile));
 };
 
+var cheerioUrl = function(url, done) {
+    var restler = require('restler');
+    restler.get(url).on('success', function(data){
+       done(cheerio.load(data));
+    });
+};
+
 var loadChecks = function(checksfile) {
     return JSON.parse(fs.readFileSync(checksfile));
 };
-
-var checkHtmlFile = function(htmlfile, checksfile) {
-    $ = cheerioHtmlFile(htmlfile);
+var doTheChecks = function($){
     var checks = loadChecks(checksfile).sort();
     var out = {};
     for(var ii in checks) {
@@ -53,6 +59,19 @@ var checkHtmlFile = function(htmlfile, checksfile) {
         out[checks[ii]] = present;
     }
     return out;
+}
+var checkHtmlFile = function(htmlfile, url, checksfile, cb) {
+    var $;
+    if (url) {
+        cheerioUrl(url, function($$){
+            cb(doTheChecks($$));
+        });
+    } else {
+        $ = cheerioHtmlFile(htmlfile);
+        cb(doTheChecks($));
+    }
+    
+
 };
 
 var clone = function(fn) {
@@ -67,9 +86,13 @@ if(require.main == module) {
         .option('-f, --file <html_file>', 'Path to index.html', clone(assertFileExists), HTMLFILE_DEFAULT)
         .option('-u, --url <url>', 'the page to be checked')
         .parse(process.argv);
-    var checkJson = checkHtmlFile(commander.file, commander.checks);
-    var outJson = JSON.stringify(checkJson, null, 4);
-    console.log(outJson);
+
+    checkHtmlFile(commander.file, commander.url, commander.checks, function(checkJson){
+        var outJson = JSON.stringify(checkJson, null, 4);
+        console.log(outJson);
+    });
+    
+    
 } else {
     exports.checkHtmlFile = checkHtmlFile;
 }
