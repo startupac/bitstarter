@@ -51,7 +51,7 @@ var cheerioUrl = function(url, done) {
 var loadChecks = function(checksfile) {
     return JSON.parse(fs.readFileSync(checksfile));
 };
-var doTheChecks = function($){
+var doTheChecks = function($, checksfile){
     var checks = loadChecks(checksfile).sort();
     var out = {};
     for(var ii in checks) {
@@ -64,11 +64,11 @@ var checkHtmlFile = function(htmlfile, url, checksfile, cb) {
     var $;
     if (url) {
         cheerioUrl(url, function($$){
-            cb(doTheChecks($$));
+            cb(doTheChecks($$, checksfile));
         });
     } else {
         $ = cheerioHtmlFile(htmlfile);
-        cb(doTheChecks($));
+        cb(doTheChecks($, checksfile));
     }
     
 
