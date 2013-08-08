@@ -4,7 +4,7 @@ var fs = require('fs');
 var app = express.createServer(express.logger());
 
 app.get('/', function(request, response) {
-  fs.createReadStream(__dirname + '/index.html')
+  fs.createReadStream(__dirname + '/assets/index.html')
     .pipe(response);
 });
 
